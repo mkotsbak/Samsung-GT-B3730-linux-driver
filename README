@@ -1,0 +1,30 @@
+
+************
+How to build
+************
+
+In root dir:
+
+* sh build.sh
+
+In option directory:
+
+* sh build.sh
+
+****************
+How to configure
+****************
+
+Set up wwan0 as dhcp interface. E.g. on Debian/Ubuntu, add this line to "/etc/network/interfaces":
+
+iface wwan0 inet dhcp
+
+**************
+How to connect
+**************
+
+* sudo insmod ./gt_b3730.ko
+* sudo insmod ./option/option.ko
+* Connect modem
+* sh chat.sh
+* ifup wwan0
