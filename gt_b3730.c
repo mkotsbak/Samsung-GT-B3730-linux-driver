@@ -164,7 +164,7 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 {
 	struct sk_buff	*skb2 = NULL;
 	u16		content_len;
-	//	u32		crc = 0;
+	u32		crc = 0;
 	unsigned char *header_start;
 	unsigned char ether_type_1, ether_type_2;
 
@@ -195,10 +195,10 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 	skb = skb2;
 
 done:
-	//	crc = crc32_le(~0, skb->data, skb->len);
-	//	crc = ~crc;
+	crc = crc32_le(~0, skb->data, skb->len);
+	crc = ~crc;
 
-	//	put_unaligned_le32(crc, skb_put(skb, ETH_FCS_LEN));
+	put_unaligned_le32(crc, skb_put(skb, ETH_FCS_LEN));
 
 	// len = skb->len;
 
@@ -245,6 +245,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		char *header_start;
 		u16 actual_length, expected_length;
 		u32	crc;
+		u32 ethertype;
 
 		/* incomplete header? */
 		if (skb->len < HEADER_LENGTH)
@@ -265,6 +266,10 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 			   skb->len - HEADER_LENGTH);
 #endif
 
+		//		ethertype = get_unaligned_le32(header + 4);
+		//		if (ethertype == 0x0800) { // IP
+		//		  ip_total_length = get_unaligned_le32(header_start + HEADER_LENGTH + 2);
+		  
 		actual_length = skb->len - HEADER_LENGTH - 6; // CRC and Ethertype
 		expected_length = header_start[2] + (header_start[3] << 8);
 		if (expected_length != actual_length) {
@@ -279,12 +284,16 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		crc = get_unaligned_le32(skb->data + skb->len - ETH_FCS_LEN);
 		if (unlikely(crc != 0x00000800)) {
 		  printk(KERN_ERR"Unexpected CRC");
-		  dev->net->stats.rx_errors++;
+		  //dev->net->stats.rx_errors++;
 		  // TODO:
 		  // return 0;
 		}
-		skb_trim(skb, skb->len - ETH_FCS_LEN);
 
+		// Replace fake CRC with read to avoid errors further up
+		crc = crc32_le(~0, skb->data, skb->len - ETH_FCS_LEN);
+		crc = ~crc;
+		//		put_unaligned_le32(crc, skb->data + skb->len - ETH_FCS_LEN);
+		put_unaligned_le32(crc, skb_put(skb, ETH_FCS_LEN));
 	return 1;
 }
 
