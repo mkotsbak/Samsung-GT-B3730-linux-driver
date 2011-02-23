@@ -244,6 +244,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	 */
 		char *header_start;
 		u16 actual_length, expected_length;
+		u32	crc;
 
 		/* incomplete header? */
 		if (skb->len < HEADER_LENGTH)
@@ -274,6 +275,15 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		}
 
 		skb_pull(skb, HEADER_LENGTH);
+
+		crc = get_unaligned_le32(skb->data + skb->len - ETH_FCS_LEN);
+		if (unlikely(crc != 0x00000800)) {
+		  printk(KERN_ERR"Unexpected CRC");
+		  dev->net->stats.rx_errors++;
+		  // TODO:
+		  // return 0;
+		}
+		skb_trim(skb, skb->len - ETH_FCS_LEN);
 
 	return 1;
 }
