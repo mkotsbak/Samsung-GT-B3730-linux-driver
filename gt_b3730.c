@@ -198,7 +198,7 @@ done:
 	crc = crc32_le(~0, skb->data, skb->len);
 	crc = ~crc;
 
-	put_unaligned_le32(crc, skb_put(skb, ETH_FCS_LEN));
+	//	put_unaligned_le32(crc, skb_put(skb, ETH_FCS_LEN));
 
 	// len = skb->len;
 
