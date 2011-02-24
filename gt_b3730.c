@@ -246,6 +246,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		u16 actual_length, expected_length;
 		u32	crc;
 		u32 ethertype;
+		struct sk_buff	*skb2 = NULL;
 
 		/* incomplete header? */
 		if (skb->len < HEADER_LENGTH)
@@ -293,8 +294,26 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		crc = crc32_le(~0, skb->data, skb->len - ETH_FCS_LEN);
 		crc = ~crc;
 		//		put_unaligned_le32(crc, skb->data + skb->len - ETH_FCS_LEN);
+
+		if (!skb_cloned(skb)) {
+		    int headroom = skb_headroom(skb);
+		    int tailroom = skb_tailroom(skb);
+		    if (tailroom >= ETH_FCS_LEN) goto done;
+		    if ((headroom + tailroom) >= ETH_FCS_LEN) {
+		        skb->data = memmove(skb->head, skb->data, skb->len);
+			skb_set_tail_pointer(skb, skb->len);
+			goto done;
+		    }
+		}
+
+		skb2 = skb_copy_expand(skb, 0, ETH_FCS_LEN, GFP_ATOMIC);
+		if (!skb2) return 0;
+		dev_kfree_skb_any(skb);
+		skb = skb2;
+
+done:
 		put_unaligned_le32(crc, skb_put(skb, ETH_FCS_LEN));
-	return 1;
+		return 1;
 }
 
 static const struct driver_info gt_b3730_info = {
