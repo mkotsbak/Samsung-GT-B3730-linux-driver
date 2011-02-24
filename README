@@ -43,8 +43,20 @@ iface wwan0 inet dhcp
 How to connect
 **************
 
-* sudo insmod ./gt_b3730.ko
+* sudo modprobe option && sudo rmmod option (to get module deps)
 * sudo insmod ./option/option.ko
 * Connect modem
+* sudo modprobe usbnet
+* sudo insmod ./gt_b3730.ko
 * sh chat.sh
-* ifup wwan0
+* sudo ifup wwan0
+
+**************
+How to reconnect
+**************
+
+* sudo ifdown wwan0
+* Unplug and plug modem (bug in firmware, "ATE1" does not work. Same with windows driver).
+* If /var/log/messages indicate error in driver, rmmod gt_b3730, then insmod again.
+* sh chat.sh
+* sudo ifup wwan0
