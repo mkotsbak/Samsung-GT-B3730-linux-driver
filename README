@@ -15,25 +15,11 @@ In option directory:
 How to configure
 ****************
 
-* Configure usb_modeswitch to not load the option driver by adding this line:
+* In /etc/usb_modeswitch.d/04e8:689a, ensure this line is enabled:
 
-# Samsung GT-B3730. Skip loading option driver for this as we need special driver on one of the interfaces.
-ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6889", GOTO="modeswitch_rules_end"
+  NoDriverLoading=1
 
-like this:
-
----------
-KERNEL=="ttyUSB*", DRIVERS=="option1|usbserial", PROGRAM="/usr/sbin/usb_modeswitch_dispatcher --symlink-name %p", SYMLINK="%c"
-
-# Samsung GT-B3730. Skip loading option driver for this as we need special driver on one of the interfaces.
-ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6889", GOTO="modeswitch_rules_end"
-
-SUBSYSTEM!="usb", GOTO="modeswitch_rules_end"
----------
-
-in /lib/udev/rules.d/40-usb_modeswitch.rules (in Ubuntu)
-
-(you need the rule for product "689a", but just the rule above for "6889")
+There should be no rule for product="6889".
 
 * Set up wwan0 as dhcp interface. E.g. in Debian/Ubuntu, add this line to "/etc/network/interfaces":
 
