@@ -267,7 +267,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		actual_length = skb->len - HEADER_LENGTH - 6; // CRC and Ethertype
 		expected_length = header_start[2] + (header_start[3] << 8);
 		if (expected_length != actual_length) {
-		  printk(KERN_ERR"Invalid package length!");
+		  printk(KERN_ERR"Invalid package length %i, expected %i!", skb->len - HEADER_LENGTH, expected_length);
 		}
 		else {
 		  printk(KERN_INFO"Correct package lenght");
