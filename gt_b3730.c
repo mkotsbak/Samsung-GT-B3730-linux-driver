@@ -76,6 +76,7 @@ fail:
 }
 */
 
+
 static int init_and_get_ethernet_addr(const struct usbnet *dev, u8 *ethernet_addr)
 {
   int act_len;
@@ -242,8 +243,8 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	 * Our task here is to strip off framing, leaving skb with one
 	 * data frame for the usbnet framework code to process.
 	 */
-		char *header_start;
-		u16 actual_length, expected_length;
+		const u8 HEADER_END_OF_USB_PACKET[] = {0x57,0x5a,0x00,0x00,0x08,0x00};
+		u8 i = 0;
 
 		/* incomplete header? */
 		if (skb->len < HEADER_LENGTH)
@@ -251,29 +252,57 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 
 		/* TODO: check first 2 header bytes for 0x57:0x44 */
 
-		header_start = skb->data;
+		do {
+		    struct sk_buff *skb2 = NULL;
+		    u8 *header_start;
+		    u16 usb_packet_length, ether_packet_lenght;
+		    int	is_last;
 
-		if (header_start[0] != 0x57 || header_start[1] != 0x44) {
-		  printk(KERN_INFO"Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
-		  return 0;
-		}
+		    header_start = skb->data;
+
+		    if (unlikely(header_start[0] != 0x57 || header_start[1] != 0x44)) {
+		      printk(KERN_INFO"Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+			     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
+		      return 0;
+		    }
 #ifdef DEBUG
-		printk(KERN_INFO"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+		    printk(KERN_INFO"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
 			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5],
 			   skb->len - HEADER_LENGTH);
 #endif
 
-		actual_length = skb->len - HEADER_LENGTH - 6; // CRC and Ethertype
-		expected_length = header_start[2] + (header_start[3] << 8);
-		if (expected_length != actual_length) {
-		  printk(KERN_ERR"Invalid package length %i, expected %i!", skb->len - HEADER_LENGTH, expected_length);
-		}
-		else {
-		  printk(KERN_INFO"Correct package lenght");
-		}
+		    usb_packet_length = skb->len - (2 * HEADER_LENGTH); // subtract start header and end header
+		    ether_packet_lenght = header_start[2] + (header_start[3] << 8);
+		    skb_pull(skb, HEADER_LENGTH);
 
-		skb_pull(skb, HEADER_LENGTH);
+		    if (unlikely(usb_packet_length < ether_packet_lenght)) {
+		        printk(KERN_ERR"Invalid package length %i, expected %i!", usb_packet_length, ether_packet_lenght);
+			ether_packet_lenght = usb_packet_length + HEADER_LENGTH;
+			is_last = true;
+		    }
+		    else {
+		        printk(KERN_INFO"Correct package lenght #%i", i+1);
+
+			is_last = (memcmp(skb->data + ether_packet_lenght, HEADER_END_OF_USB_PACKET, sizeof(HEADER_END_OF_USB_PACKET)) == 0);
+		    }
+
+		    if (is_last) skb2 = skb;
+		    else {
+		        skb2 = skb_clone(skb, GFP_ATOMIC);
+			if (unlikely(!skb2))
+  			    return 0;
+		    }
+
+		    skb_trim(skb2, ether_packet_lenght);
+
+		    if (is_last) return 1;
+		    else {
+			usbnet_skb_return(dev, skb2);
+			skb_pull(skb, ether_packet_lenght);
+		    }
+
+		i++;
+		} while (skb->len);
 
 	return 1;
 }
