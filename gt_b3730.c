@@ -219,17 +219,9 @@ done:
 	// According to empiric data for data packages
 	header_start[0] = 0x57;
 	header_start[1] = 0x44;
-
-	if (unlikely(0x86 == ether_type_1 && 0xdd == ether_type_2)) { // IPv6
-	  // IPv6 is probably not supported by the modem yet
-	  printk(KERN_INFO"Dropping IPv6 package");
-	  return NULL;
-	}
-	else {
-	  content_len = skb->len - HEADER_LENGTH;
-	  header_start[2] = (content_len & 0xff); // low byte
-	  header_start[3] = (content_len >> 8);   // high byte
-	}
+	content_len = skb->len - HEADER_LENGTH;
+	header_start[2] = (content_len & 0xff); // low byte
+	header_start[3] = (content_len >> 8);   // high byte
 
 	header_start[4] = ether_type_1;
 	header_start[5] = ether_type_2;
