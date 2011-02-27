@@ -263,7 +263,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		    if (unlikely(header_start[0] != 0x57 || header_start[1] != 0x44)) {
 		      printk(KERN_INFO"Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
 			     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
-		      return 0;
+		      //		      return 0;
 		    }
 #ifdef DEBUG
 		    printk(KERN_INFO"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
@@ -284,6 +284,12 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		        printk(KERN_INFO"Correct package lenght #%i", i+1);
 
 			is_last = (memcmp(skb->data + ether_packet_lenght, HEADER_END_OF_USB_PACKET, sizeof(HEADER_END_OF_USB_PACKET)) == 0);
+			if (!is_last) {
+			  header_start = skb->data + ether_packet_lenght;
+			  printk(KERN_INFO"End header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5],
+			   skb->len - HEADER_LENGTH);
+			}
 		    }
 
 		    if (is_last) skb2 = skb;
