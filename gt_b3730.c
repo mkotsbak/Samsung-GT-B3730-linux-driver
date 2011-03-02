@@ -267,8 +267,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		    }
 #ifdef DEBUG
 		    printk(KERN_INFO"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5],
-			   skb->len - HEADER_LENGTH);
+			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
 #endif
 
 		    usb_packet_length = skb->len - (2 * HEADER_LENGTH); // subtract start header and end header
@@ -281,14 +280,18 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 			is_last = true;
 		    }
 		    else {
+#ifdef DEBUG
 		        printk(KERN_INFO"Correct package lenght #%i", i+1);
+#endif
 
 			is_last = (memcmp(skb->data + ether_packet_lenght, HEADER_END_OF_USB_PACKET, sizeof(HEADER_END_OF_USB_PACKET)) == 0);
 			if (!is_last) {
 			  header_start = skb->data + ether_packet_lenght;
+#ifdef DEBUG
 			  printk(KERN_INFO"End header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5],
-			   skb->len - HEADER_LENGTH);
+			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
+#endif
+
 			}
 		    }
 
