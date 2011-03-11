@@ -148,7 +148,7 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 	dev->net->hard_header_len += (2 * HEADER_LENGTH);
 	//	dev->net->mtu = le16_to_cpu(dev->udev->ep0.desc.wMaxPacketSize);
 	//	dev->net->mtu = 512; // FIXME
-	// dev->hard_mtu = 512; // FIXME
+	dev->hard_mtu = 8192 * 4; // TODO: is this too big?
 
 	status = init_and_get_ethernet_addr(dev, ethernet_addr);
 
@@ -263,7 +263,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		    if (unlikely(header_start[0] != 0x57 || header_start[1] != 0x44)) {
 		      printk(KERN_INFO"Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
 			     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
-		      //		      return 0;
+		      return 0;
 		    }
 #ifdef DEBUG
 		    printk(KERN_INFO"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
