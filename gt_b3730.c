@@ -145,7 +145,7 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 		return status;
 	}
 
-	dev->net->hard_header_len += HEADER_LENGTH + ETH_FCS_LEN;
+	dev->net->hard_header_len += (2 * HEADER_LENGTH);
 	//	dev->net->mtu = le16_to_cpu(dev->udev->ep0.desc.wMaxPacketSize);
 	//	dev->net->mtu = 512; // FIXME
 	// dev->hard_mtu = 512; // FIXME
