@@ -42,6 +42,7 @@
 //#define      VERBOSE
 
 #define HEADER_LENGTH 6
+#define ALIGN_SIZE 4
 #define USB_TIMEOUT 10000
 
 /*-------------------------------------------------------------------------*/
@@ -168,17 +169,18 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 	//	u32		crc = 0;
 	unsigned char *header_start;
 	unsigned char ether_type_1, ether_type_2;
+	u8 reminder, padlen;
 
 	if (!skb_cloned(skb)) {
 		int	headroom = skb_headroom(skb);
 		int	tailroom = skb_tailroom(skb);
 
-		if ((tailroom >= ETH_FCS_LEN) &&
+		if ((tailroom >= ALIGN_SIZE) &&
 		    (headroom >= HEADER_LENGTH))
 			goto done;
 
 		if ((headroom + tailroom)
-				> (HEADER_LENGTH + ETH_FCS_LEN)) {
+				> (HEADER_LENGTH + ALIGN_SIZE)) {
 			skb->data = memmove(skb->head +
 					HEADER_LENGTH,
 					skb->data,
@@ -188,7 +190,7 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 		}
 	}
 
-	skb2 = skb_copy_expand(skb, HEADER_LENGTH, ETH_FCS_LEN, flags);
+	skb2 = skb_copy_expand(skb, HEADER_LENGTH, ALIGN_SIZE, flags);
 	if (!skb2)
 		return NULL;
 
@@ -229,9 +231,16 @@ done:
 	header_start[4] = ether_type_1;
 	header_start[5] = ether_type_2;
 
+	// Align to 4 bytes by padding with zeros
+	reminder = skb->len % ALIGN_SIZE;
+	if (reminder > 0) {
+	  padlen = ALIGN_SIZE - reminder;
+	  memset(skb_put(skb, padlen), 0, padlen);
+	}
+
 #ifdef DEBUG
-	printk(KERN_INFO"Sending package with length %i. Header: %02x:%02x:%02x:%02x:%02x:%02x.", content_len,
-		 header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5]);
+	printk(KERN_INFO"Sending package with length %i and padding %i. Header: %02x:%02x:%02x:%02x:%02x:%02x.", content_len,
+	       padlen, header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5]);
 #endif
 
 	return skb;
