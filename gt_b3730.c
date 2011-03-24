@@ -146,10 +146,9 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 		return status;
 	}
 
-	dev->net->hard_header_len += (2 * HEADER_LENGTH);
-	//	dev->net->mtu = le16_to_cpu(dev->udev->ep0.desc.wMaxPacketSize);
-	//	dev->net->mtu = 512; // FIXME
-	dev->hard_mtu = 8192 * 4; // TODO: is this too big?
+	dev->net->hard_header_len += HEADER_LENGTH;
+	dev->hard_mtu = 1400;
+	dev->rx_urb_size = dev->hard_mtu * 20;
 
 	status = init_and_get_ethernet_addr(dev, ethernet_addr);
 
