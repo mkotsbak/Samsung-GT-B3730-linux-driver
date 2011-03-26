@@ -137,9 +137,13 @@ static int init_and_get_ethernet_addr(const struct usbnet *dev, u8 *ethernet_add
 static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 {
 	int status = 0;
+	int i = 0;
 	u8 ethernet_addr[ETH_ALEN];
 
-	status = usbnet_get_endpoints(dev, intf);
+	do {
+	  status = usbnet_get_endpoints(dev, intf);
+	} while (status < 0 && ++i < 5);
+
 	if (status < 0) {
 		usb_set_intfdata(intf, NULL);
 		usb_driver_release_interface(driver_of(intf), intf);
