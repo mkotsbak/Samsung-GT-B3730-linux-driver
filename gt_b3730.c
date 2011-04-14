@@ -136,25 +136,24 @@ static int init_and_get_ethernet_addr(const struct usbnet *dev, u8 *ethernet_add
 
 static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 {
-	int status = 0;
-	int i = 0;
-	u8 ethernet_addr[ETH_ALEN];
+  u8 status;
+  u8 ethernet_addr[ETH_ALEN];
 
-	do {
-	  status = usbnet_get_endpoints(dev, intf);
-	} while (status < 0 && ++i < 5);
-
-	if (status < 0) {
-		usb_set_intfdata(intf, NULL);
-		usb_driver_release_interface(driver_of(intf), intf);
-		return status;
-	}
+	dev->in = usb_rcvbulkpipe (dev->udev, 0x81 & USB_ENDPOINT_NUMBER_MASK);
+	dev->out = usb_sndbulkpipe (dev->udev, 0x02 & USB_ENDPOINT_NUMBER_MASK);
+	dev->status = NULL;
 
 	dev->net->hard_header_len += HEADER_LENGTH;
 	dev->hard_mtu = 1400;
 	dev->rx_urb_size = dev->hard_mtu * 20;
 
 	status = init_and_get_ethernet_addr(dev, ethernet_addr);
+
+	if (status < 0) {
+		usb_set_intfdata(intf, NULL);
+		usb_driver_release_interface(driver_of(intf), intf);
+		return status;
+	}
 
         memcpy(dev->net->dev_addr, ethernet_addr, ETH_ALEN);
         memcpy(dev->net->perm_addr, ethernet_addr, ETH_ALEN);
