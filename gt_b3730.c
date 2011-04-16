@@ -336,7 +336,8 @@ static const struct driver_info gt_b3730_info = {
 
 static const struct usb_device_id products[] = {
   /* Samsung LTE modem */
-  { USB_DEVICE(0x04e8, 0x6889),
+  { USB_DEVICE(0x04e8, 0x689a) }, /* The unswitched USB ID, to get the module auto loaded. */
+  { USB_DEVICE(0x04e8, 0x6889),   /* The stick swithed into modem (by e.g. usb_modeswitch) */
     .driver_info = (unsigned long) &gt_b3730_info,
   },
   { /* EMPTY == end of list */ }
