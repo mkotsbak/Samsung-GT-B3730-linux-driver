@@ -139,6 +139,11 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
   u8 status;
   u8 ethernet_addr[ETH_ALEN];
 
+  /* Don't bind to AT command interface */
+  if (intf->cur_altsetting->desc.bInterfaceClass != USB_CLASS_VENDOR_SPEC) {
+    return -EINVAL;
+  }
+
 	dev->in = usb_rcvbulkpipe (dev->udev, 0x81 & USB_ENDPOINT_NUMBER_MASK);
 	dev->out = usb_sndbulkpipe (dev->udev, 0x02 & USB_ENDPOINT_NUMBER_MASK);
 	dev->status = NULL;
