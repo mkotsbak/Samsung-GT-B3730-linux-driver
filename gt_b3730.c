@@ -282,8 +282,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		    ether_packet_lenght = header_start[2] + (header_start[3] << 8);
 		    skb_pull(skb, HEADER_LENGTH);
 
-		    if (unlikely(usb_packet_length < ether_packet_lenght)) {
-		        printk(KERN_ERR"Invalid package length %i, expected %i!", usb_packet_length, ether_packet_lenght);
+		    if (usb_packet_length < ether_packet_lenght) { // Some small packets misses end marker
 			ether_packet_lenght = usb_packet_length + HEADER_LENGTH;
 			is_last = true;
 		    }
