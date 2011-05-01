@@ -77,59 +77,49 @@ fail:
 }
 */
 
-
-static int init_and_get_ethernet_addr(const struct usbnet *dev, u8 *ethernet_addr)
+static int send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len, u8* buffer, u8 expected_len)
 {
   int act_len;
   int status;
+
+  printk(KERN_DEBUG"Trying to send init packet");
+
+  status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02), init_msg, init_msg_len, &act_len, USB_TIMEOUT);
+  if (status != 0) {
+    printk(KERN_ERR"Error sending init packet. Status %i, length %i\n", status, act_len);
+    return status;
+  }
+  else if (act_len != init_msg_len) {
+      printk(KERN_ERR"Did not send all of init packet. Bytes sent: %i", act_len);
+  }
+  else {
+    printk(KERN_DEBUG"Successfully sent init packet.");
+  }
+
+  status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81), buffer, expected_len, &act_len, USB_TIMEOUT);
+
+  if (status != 0) {
+    printk(KERN_ERR"Error receiving init result. Status %i, length %i\n", status, act_len);
+  }
+  else if (act_len != expected_len) {
+    printk(KERN_ERR"Unexpected init result length: %i\n", act_len);
+  }
+  return status;
+}
+
+static int init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
+{
   char init_msg_1[] = {0x57,0x50,0x04,0x00,0x00,0x00,0x00,0x20,0x00,0x00,0x00,0x00};
   char init_msg_2[] = {0x57,0x50,0x04,0x00,0x00,0x00,0x00,0x02,0x00,0xf4,0x00,0x00};
-  char receive_buf[512];
+  char receive_buf[28];
+  int status;
 
-  printk(KERN_INFO"Trying to send init package");
+  status = send_init_packet(dev, init_msg_1, sizeof(init_msg_1) / sizeof(init_msg_1[0]), receive_buf, 24);
+  if (status != 0) return status;
 
-  status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02), init_msg_1, sizeof(init_msg_1), &act_len, USB_TIMEOUT);
-
-  if (status != 0) {
-    printk(KERN_ERR"Error sending init package. Status %i, length %i\n", status, act_len);
-    return status;
-  }
-  else {
-    printk(KERN_INFO"Sent package length: %i\n", act_len);
-  }
-
-  status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81), receive_buf, sizeof(receive_buf), &act_len, USB_TIMEOUT);
-
-  if (status != 0) {
-    printk(KERN_ERR"Error receiving init result. Status %i, length %i\n", status, act_len);
-    return status;
-  }
-  else {
-    printk(KERN_INFO"Received init result: %i\n", act_len);
-  }
-
-  printk(KERN_INFO"Trying to send init package 2");
-
-  status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02), init_msg_2, sizeof(init_msg_2), &act_len, USB_TIMEOUT);
-
-  if (status != 0) {
-    printk(KERN_ERR"Error sending init package. Status %i, length %i\n", status, act_len);
-    return status;
-  }
-  else {
-    printk(KERN_INFO"Sent package length: %i\n", act_len);
-  }
-
-  status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81), receive_buf, sizeof(receive_buf), &act_len, USB_TIMEOUT);
-
-  if (status != 0) {
-    printk(KERN_ERR"Error receiving init result. Status %i, length %i\n", status, act_len);
-    return status;
-  }
-  else {
-    printk(KERN_INFO"Received init result: %i\n", act_len);
-    memcpy(ethernet_addr, receive_buf + 10, ETH_ALEN);
-  }
+  status = send_init_packet(dev, init_msg_2, sizeof(init_msg_2) / sizeof(init_msg_2[0]), receive_buf, 28);
+  if (status != 0) return status;
+  memcpy(ethernet_addr, receive_buf + 10, ETH_ALEN);
 
   return status;
 }
