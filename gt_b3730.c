@@ -47,36 +47,6 @@
 
 /*-------------------------------------------------------------------------*/
 
-/*
-static void eem_linkcmd_complete(struct urb *urb)
-{
-	dev_kfree_skb(urb->context);
-	usb_free_urb(urb);
-}
-
-static void eem_linkcmd(struct usbnet *dev, struct sk_buff *skb)
-{
-	struct urb		*urb;
-	int			status;
-
-	urb = usb_alloc_urb(0, GFP_ATOMIC);
-	if (!urb)
-		goto fail;
-
-	usb_fill_bulk_urb(urb, dev->udev, dev->out,
-			skb->data, skb->len, eem_linkcmd_complete, skb);
-
-	status = usb_submit_urb(urb, GFP_ATOMIC);
-	if (status) {
-		usb_free_urb(urb);
-fail:
-		dev_kfree_skb(skb);
-		netdev_warn(dev->net, "link cmd failure\n");
-		return;
-	}
-}
-*/
-
 static int gt_b3730_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len, u8* buffer, u8 expected_len)
 {
   int act_len;
@@ -163,7 +133,6 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 {
 	struct sk_buff	*skb2 = NULL;
 	u16		content_len;
-	//	u32		crc = 0;
 	unsigned char *header_start;
 	unsigned char ether_type_1, ether_type_2;
 	u8 reminder, padlen;
@@ -195,13 +164,6 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 	skb = skb2;
 
 done:
-	//	crc = crc32_le(~0, skb->data, skb->len);
-	//	crc = ~crc;
-
-	//	put_unaligned_le32(crc, skb_put(skb, ETH_FCS_LEN));
-
-	// len = skb->len;
-
 	header_start = skb_push(skb, GT_B3730_HEADER_LENGTH);
 	ether_type_1 = header_start[GT_B3730_HEADER_LENGTH + 12];
 	ether_type_2 = header_start[GT_B3730_HEADER_LENGTH + 13];
