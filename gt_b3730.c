@@ -242,13 +242,13 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	 * data frame for the usbnet framework code to process.
 	 */
 		const u8 HEADER_END_OF_USB_PACKET[] = {0x57,0x5a,0x00,0x00,0x08,0x00};
+		const u8 EXPECTED_UNKNOWN_HEADER_1[] = {0x57,0x43,0x1e,0x00,0x15,0x02};
+		const u8 EXPECTED_UNKNOWN_HEADER_2[] = {0x57,0x50,0x0e,0x00,0x00,0x00};
 		u8 i = 0;
 
 		/* incomplete header? */
 		if (skb->len < HEADER_LENGTH)
 			return 0;
-
-		/* TODO: check first 2 header bytes for 0x57:0x44 */
 
 		do {
 		    struct sk_buff *skb2 = NULL;
@@ -259,9 +259,18 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		    header_start = skb->data;
 
 		    if (unlikely(header_start[0] != 0x57 || header_start[1] != 0x44)) {
-		      printk(KERN_INFO"Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+		      if (!memcmp(header_start, EXPECTED_UNKNOWN_HEADER_1, sizeof(EXPECTED_UNKNOWN_HEADER_1))
+			  || !memcmp(header_start, EXPECTED_UNKNOWN_HEADER_2, sizeof(EXPECTED_UNKNOWN_HEADER_2))) {
+#ifdef DEBUG
+			printk(KERN_INFO"Received expected unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+			       header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
+#endif
+		      }
+		      else {
+			printk(KERN_ERR"Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
 			     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
 		      return 0;
+		      }
 		    }
 #ifdef DEBUG
 		    printk(KERN_INFO"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
