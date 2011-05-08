@@ -41,9 +41,9 @@
 //#define      DEBUG                   // error path messages, extra info
 //#define      VERBOSE
 
-#define HEADER_LENGTH 6
-#define ALIGN_SIZE 4
-#define USB_TIMEOUT 10000
+#define GT_B3730_HEADER_LENGTH 6
+#define GT_B3730_ALIGN_SIZE 4
+#define GT_B3730_USB_TIMEOUT 10000
 
 /*-------------------------------------------------------------------------*/
 
@@ -77,14 +77,14 @@ fail:
 }
 */
 
-static int send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len, u8* buffer, u8 expected_len)
+static int gt_b3730_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len, u8* buffer, u8 expected_len)
 {
   int act_len;
   int status;
 
   printk(KERN_DEBUG"Trying to send init packet");
 
-  status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02), init_msg, init_msg_len, &act_len, USB_TIMEOUT);
+  status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02), init_msg, init_msg_len, &act_len, GT_B3730_USB_TIMEOUT);
   if (status != 0) {
     printk(KERN_ERR"Error sending init packet. Status %i, length %i\n", status, act_len);
     return status;
@@ -96,7 +96,7 @@ static int send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len, u
     printk(KERN_DEBUG"Successfully sent init packet.");
   }
 
-  status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81), buffer, expected_len, &act_len, USB_TIMEOUT);
+  status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81), buffer, expected_len, &act_len, GT_B3730_USB_TIMEOUT);
 
   if (status != 0) {
     printk(KERN_ERR"Error receiving init result. Status %i, length %i\n", status, act_len);
@@ -107,17 +107,17 @@ static int send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len, u
   return status;
 }
 
-static int init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
+static int gt_b3730_init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
 {
   char init_msg_1[] = {0x57,0x50,0x04,0x00,0x00,0x00,0x00,0x20,0x00,0x00,0x00,0x00};
   char init_msg_2[] = {0x57,0x50,0x04,0x00,0x00,0x00,0x00,0x02,0x00,0xf4,0x00,0x00};
   char receive_buf[28];
   int status;
 
-  status = send_init_packet(dev, init_msg_1, sizeof(init_msg_1) / sizeof(init_msg_1[0]), receive_buf, 24);
+  status = gt_b3730_send_init_packet(dev, init_msg_1, sizeof(init_msg_1) / sizeof(init_msg_1[0]), receive_buf, 24);
   if (status != 0) return status;
 
-  status = send_init_packet(dev, init_msg_2, sizeof(init_msg_2) / sizeof(init_msg_2[0]), receive_buf, 28);
+  status = gt_b3730_send_init_packet(dev, init_msg_2, sizeof(init_msg_2) / sizeof(init_msg_2[0]), receive_buf, 28);
   if (status != 0) return status;
   memcpy(ethernet_addr, receive_buf + 10, ETH_ALEN);
 
@@ -138,11 +138,11 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 	dev->out = usb_sndbulkpipe (dev->udev, 0x02 & USB_ENDPOINT_NUMBER_MASK);
 	dev->status = NULL;
 
-	dev->net->hard_header_len += HEADER_LENGTH;
+	dev->net->hard_header_len += GT_B3730_HEADER_LENGTH;
 	dev->hard_mtu = 1400;
 	dev->rx_urb_size = dev->hard_mtu * 20;
 
-	status = init_and_get_ethernet_addr(dev, ethernet_addr);
+	status = gt_b3730_init_and_get_ethernet_addr(dev, ethernet_addr);
 
 	if (status < 0) {
 		usb_set_intfdata(intf, NULL);
@@ -172,14 +172,14 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 		int	headroom = skb_headroom(skb);
 		int	tailroom = skb_tailroom(skb);
 
-		if ((tailroom >= ALIGN_SIZE) &&
-		    (headroom >= HEADER_LENGTH))
+		if ((tailroom >= GT_B3730_ALIGN_SIZE) &&
+		    (headroom >= GT_B3730_HEADER_LENGTH))
 			goto done;
 
 		if ((headroom + tailroom)
-				> (HEADER_LENGTH + ALIGN_SIZE)) {
+				> (GT_B3730_HEADER_LENGTH + GT_B3730_ALIGN_SIZE)) {
 			skb->data = memmove(skb->head +
-					HEADER_LENGTH,
+					GT_B3730_HEADER_LENGTH,
 					skb->data,
 					skb->len);
 			skb_set_tail_pointer(skb, skb->len);
@@ -187,7 +187,7 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 		}
 	}
 
-	skb2 = skb_copy_expand(skb, HEADER_LENGTH, ALIGN_SIZE, flags);
+	skb2 = skb_copy_expand(skb, GT_B3730_HEADER_LENGTH, GT_B3730_ALIGN_SIZE, flags);
 	if (!skb2)
 		return NULL;
 
@@ -202,9 +202,9 @@ done:
 
 	// len = skb->len;
 
-	header_start = skb_push(skb, HEADER_LENGTH);
-	ether_type_1 = header_start[HEADER_LENGTH + 12];
-	ether_type_2 = header_start[HEADER_LENGTH + 13];
+	header_start = skb_push(skb, GT_B3730_HEADER_LENGTH);
+	ether_type_1 = header_start[GT_B3730_HEADER_LENGTH + 12];
+	ether_type_2 = header_start[GT_B3730_HEADER_LENGTH + 13];
 
 #ifdef DEBUG
 	printk(KERN_INFO"Sending etherType: %02x%02x", ether_type_1, ether_type_2);
@@ -213,7 +213,7 @@ done:
 	// According to empiric data for data packages
 	header_start[0] = 0x57;
 	header_start[1] = 0x44;
-	content_len = skb->len - HEADER_LENGTH;
+	content_len = skb->len - GT_B3730_HEADER_LENGTH;
 	header_start[2] = (content_len & 0xff); // low byte
 	header_start[3] = (content_len >> 8);   // high byte
 
@@ -221,9 +221,9 @@ done:
 	header_start[5] = ether_type_2;
 
 	// Align to 4 bytes by padding with zeros
-	reminder = skb->len % ALIGN_SIZE;
+	reminder = skb->len % GT_B3730_ALIGN_SIZE;
 	if (reminder > 0) {
-	  padlen = ALIGN_SIZE - reminder;
+	  padlen = GT_B3730_ALIGN_SIZE - reminder;
 	  memset(skb_put(skb, padlen), 0, padlen);
 	}
 
@@ -247,7 +247,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 		u8 i = 0;
 
 		/* incomplete header? */
-		if (skb->len < HEADER_LENGTH)
+		if (skb->len < GT_B3730_HEADER_LENGTH)
 			return 0;
 
 		do {
@@ -263,26 +263,26 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 			  || !memcmp(header_start, EXPECTED_UNKNOWN_HEADER_2, sizeof(EXPECTED_UNKNOWN_HEADER_2))) {
 #ifdef DEBUG
 			printk(KERN_INFO"Received expected unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			       header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
+			       header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
 #endif
 		      }
 		      else {
 			printk(KERN_ERR"Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
+			     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
 		      return 0;
 		      }
 		    }
 #ifdef DEBUG
 		    printk(KERN_INFO"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
+			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
 #endif
 
-		    usb_packet_length = skb->len - (2 * HEADER_LENGTH); // subtract start header and end header
+		    usb_packet_length = skb->len - (2 * GT_B3730_HEADER_LENGTH); // subtract start header and end header
 		    ether_packet_lenght = header_start[2] + (header_start[3] << 8);
-		    skb_pull(skb, HEADER_LENGTH);
+		    skb_pull(skb, GT_B3730_HEADER_LENGTH);
 
 		    if (usb_packet_length < ether_packet_lenght) { // Some small packets misses end marker
-			ether_packet_lenght = usb_packet_length + HEADER_LENGTH;
+			ether_packet_lenght = usb_packet_length + GT_B3730_HEADER_LENGTH;
 			is_last = true;
 		    }
 		    else {
@@ -295,7 +295,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 			  header_start = skb->data + ether_packet_lenght;
 #ifdef DEBUG
 			  printk(KERN_INFO"End header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - HEADER_LENGTH);
+			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
 #endif
 
 			}
