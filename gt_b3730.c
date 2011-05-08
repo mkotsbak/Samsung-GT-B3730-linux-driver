@@ -315,7 +315,7 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 
 static const struct driver_info gt_b3730_info = {
 	.description =	"Samsung GT-B3730 LTE USB dongle",
-	.flags =	FLAG_WWAN,
+	.flags =	FLAG_WWAN | FLAG_RX_ASSEMBLE,
 	.bind =		gt_b3730_bind,
 	.rx_fixup =	gt_b3730_rx_fixup,
 	.tx_fixup =	gt_b3730_tx_fixup,
