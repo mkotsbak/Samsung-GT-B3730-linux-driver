@@ -12,12 +12,12 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 #include <linux/module.h>
@@ -38,8 +38,8 @@
 /*
  */
 
-//#define      DEBUG                   // error path messages, extra info
-//#define      VERBOSE
+/* #define	DEBUG */
+/* #define	VERBOSE */
 
 #define GT_B3730_HEADER_LENGTH 6
 #define GT_B3730_ALIGN_SIZE 4
@@ -49,60 +49,59 @@
 
 static int gt_b3730_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len, u8* buffer, u8 expected_len)
 {
-  int act_len;
-  int status;
+	int act_len;
+	int status;
 
-  netdev_dbg(dev->net, "Sending init packet");
+	netdev_dbg(dev->net, "Sending init packet");
 
-  status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02), init_msg, init_msg_len, &act_len, GT_B3730_USB_TIMEOUT);
-  if (status != 0) {
-    netdev_err(dev->net, "Error sending init packet. Status %i, length %i\n", status, act_len);
-    return status;
-  }
-  else if (act_len != init_msg_len) {
-    netdev_err(dev->net, "Did not send all of init packet. Bytes sent: %i", act_len);
-  }
-  else {
-    netdev_dbg(dev->net, "Successfully sent init packet.");
-  }
+	status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02), init_msg, init_msg_len, &act_len, GT_B3730_USB_TIMEOUT);
+	if (status != 0) {
+		netdev_err(dev->net, "Error sending init packet. Status %i, length %i\n", status, act_len);
+		return status;
+	} else if (act_len != init_msg_len) {
+		netdev_err(dev->net, "Did not send all of init packet. Bytes sent: %i", act_len);
+	} else {
+		netdev_dbg(dev->net, "Successfully sent init packet.");
+	}
 
-  status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81), buffer, expected_len, &act_len, GT_B3730_USB_TIMEOUT);
+	status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81), buffer, expected_len, &act_len, GT_B3730_USB_TIMEOUT);
 
-  if (status != 0) {
-    netdev_err(dev->net, "Error receiving init result. Status %i, length %i\n", status, act_len);
-  }
-  else if (act_len != expected_len) {
-    netdev_err(dev->net, "Unexpected init result length: %i\n", act_len);
-  }
-  return status;
+	if (status != 0)
+		netdev_err(dev->net, "Error receiving init result. Status %i, length %i\n", status, act_len);
+	else if (act_len != expected_len)
+		netdev_err(dev->net, "Unexpected init result length: %i\n", act_len);
+
+	return status;
 }
 
 static int gt_b3730_init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
 {
-  char init_msg_1[] = {0x57,0x50,0x04,0x00,0x00,0x00,0x00,0x20,0x00,0x00,0x00,0x00};
-  char init_msg_2[] = {0x57,0x50,0x04,0x00,0x00,0x00,0x00,0x02,0x00,0xf4,0x00,0x00};
-  char receive_buf[28];
-  int status;
+	char init_msg_1[] = {0x57, 0x50, 0x04, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00};
+	char init_msg_2[] = {0x57, 0x50, 0x04, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0xf4, 0x00, 0x00};
+	char receive_buf[28];
+	int status;
 
-  status = gt_b3730_send_init_packet(dev, init_msg_1, sizeof(init_msg_1) / sizeof(init_msg_1[0]), receive_buf, 24);
-  if (status != 0) return status;
+	status = gt_b3730_send_init_packet(dev, init_msg_1, sizeof(init_msg_1) / sizeof(init_msg_1[0]), receive_buf, 24);
+	if (status != 0)
+		return status;
 
-  status = gt_b3730_send_init_packet(dev, init_msg_2, sizeof(init_msg_2) / sizeof(init_msg_2[0]), receive_buf, 28);
-  if (status != 0) return status;
-  memcpy(ethernet_addr, receive_buf + 10, ETH_ALEN);
+	status = gt_b3730_send_init_packet(dev, init_msg_2, sizeof(init_msg_2) / sizeof(init_msg_2[0]), receive_buf, 28);
+	if (status != 0)
+		return status;
 
-  return status;
+	memcpy(ethernet_addr, receive_buf + 10, ETH_ALEN);
+
+	return status;
 }
 
 static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 {
-  u8 status;
-  u8 ethernet_addr[ETH_ALEN];
+	u8 status;
+	u8 ethernet_addr[ETH_ALEN];
 
-  /* Don't bind to AT command interface */
-  if (intf->cur_altsetting->desc.bInterfaceClass != USB_CLASS_VENDOR_SPEC) {
-    return -EINVAL;
-  }
+	/* Don't bind to AT command interface */
+	if (intf->cur_altsetting->desc.bInterfaceClass != USB_CLASS_VENDOR_SPEC)
+		return -EINVAL;
 
 	dev->in = usb_rcvbulkpipe (dev->udev, 0x81 & USB_ENDPOINT_NUMBER_MASK);
 	dev->out = usb_sndbulkpipe (dev->udev, 0x02 & USB_ENDPOINT_NUMBER_MASK);
@@ -120,8 +119,8 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 		return status;
 	}
 
-        memcpy(dev->net->dev_addr, ethernet_addr, ETH_ALEN);
-        memcpy(dev->net->perm_addr, ethernet_addr, ETH_ALEN);
+	memcpy(dev->net->dev_addr, ethernet_addr, ETH_ALEN);
+	memcpy(dev->net->perm_addr, ethernet_addr, ETH_ALEN);
 
 	return status;
 }
@@ -129,7 +128,7 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 /*
  */
 static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb,
-				       gfp_t flags)
+							 gfp_t flags)
 {
 	struct sk_buff	*skb2 = NULL;
 	u16		content_len;
@@ -142,15 +141,15 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 		int	tailroom = skb_tailroom(skb);
 
 		if ((tailroom >= GT_B3730_ALIGN_SIZE) &&
-		    (headroom >= GT_B3730_HEADER_LENGTH))
+	(headroom >= GT_B3730_HEADER_LENGTH))
 			goto done;
 
 		if ((headroom + tailroom)
-				> (GT_B3730_HEADER_LENGTH + GT_B3730_ALIGN_SIZE)) {
+	> (GT_B3730_HEADER_LENGTH + GT_B3730_ALIGN_SIZE)) {
 			skb->data = memmove(skb->head +
-					GT_B3730_HEADER_LENGTH,
-					skb->data,
-					skb->len);
+				GT_B3730_HEADER_LENGTH,
+				skb->data,
+				skb->len);
 			skb_set_tail_pointer(skb, skb->len);
 			goto done;
 		}
@@ -163,32 +162,32 @@ static struct sk_buff *gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb
 	dev_kfree_skb_any(skb);
 	skb = skb2;
 
-done:
+ done:
 	header_start = skb_push(skb, GT_B3730_HEADER_LENGTH);
 	ether_type_1 = header_start[GT_B3730_HEADER_LENGTH + 12];
 	ether_type_2 = header_start[GT_B3730_HEADER_LENGTH + 13];
 
 	netdev_dbg(dev->net, "Sending etherType: %02x%02x", ether_type_1, ether_type_2);
 
-	// According to empiric data for data packages
+	/* According to empiric data for data packages */
 	header_start[0] = 0x57;
 	header_start[1] = 0x44;
 	content_len = skb->len - GT_B3730_HEADER_LENGTH;
-	header_start[2] = (content_len & 0xff); // low byte
-	header_start[3] = (content_len >> 8);   // high byte
+	header_start[2] = (content_len & 0xff);  /* low byte */
+	header_start[3] = (content_len >> 8);	 /* high byte */
 
 	header_start[4] = ether_type_1;
 	header_start[5] = ether_type_2;
 
-	// Align to 4 bytes by padding with zeros
+	/* Align to 4 bytes by padding with zeros */
 	reminder = skb->len % GT_B3730_ALIGN_SIZE;
 	if (reminder > 0) {
-	  padlen = GT_B3730_ALIGN_SIZE - reminder;
-	  memset(skb_put(skb, padlen), 0, padlen);
+		padlen = GT_B3730_ALIGN_SIZE - reminder;
+		memset(skb_put(skb, padlen), 0, padlen);
 	}
 
 	netdev_dbg(dev->net, "Sending package with length %i and padding %i. Header: %02x:%02x:%02x:%02x:%02x:%02x.", content_len,
-	       padlen, header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5]);
+			 padlen, header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5]);
 
 	return skb;
 }
@@ -199,74 +198,74 @@ static int gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	 * Our task here is to strip off framing, leaving skb with one
 	 * data frame for the usbnet framework code to process.
 	 */
-		const u8 HEADER_END_OF_USB_PACKET[] = {0x57,0x5a,0x00,0x00,0x08,0x00};
-		const u8 EXPECTED_UNKNOWN_HEADER_1[] = {0x57,0x43,0x1e,0x00,0x15,0x02};
-		const u8 EXPECTED_UNKNOWN_HEADER_2[] = {0x57,0x50,0x0e,0x00,0x00,0x00};
-		u8 i = 0;
+	const u8 HEADER_END_OF_USB_PACKET[] = {0x57, 0x5a, 0x00, 0x00, 0x08, 0x00};
+	const u8 EXPECTED_UNKNOWN_HEADER_1[] = {0x57, 0x43, 0x1e, 0x00, 0x15, 0x02};
+	const u8 EXPECTED_UNKNOWN_HEADER_2[] = {0x57, 0x50, 0x0e, 0x00, 0x00, 0x00};
+	u8 i = 0;
 
-		/* incomplete header? */
-		if (skb->len < GT_B3730_HEADER_LENGTH)
-			return 0;
+	/* incomplete header? */
+	if (skb->len < GT_B3730_HEADER_LENGTH)
+		return 0;
 
-		do {
-		    struct sk_buff *skb2 = NULL;
-		    u8 *header_start;
-		    u16 usb_packet_length, ether_packet_lenght;
-		    int	is_last;
+	do {
+		struct sk_buff *skb2 = NULL;
+		u8 *header_start;
+		u16 usb_packet_length, ether_packet_lenght;
+		int	is_last;
 
-		    header_start = skb->data;
+		header_start = skb->data;
 
-		    if (unlikely(header_start[0] != 0x57 || header_start[1] != 0x44)) {
-		      if (!memcmp(header_start, EXPECTED_UNKNOWN_HEADER_1, sizeof(EXPECTED_UNKNOWN_HEADER_1))
-			  || !memcmp(header_start, EXPECTED_UNKNOWN_HEADER_2, sizeof(EXPECTED_UNKNOWN_HEADER_2))) {
-			netdev_dbg(dev->net, "Received expected unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			       header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
-		      }
-		      else {
-			netdev_err(dev->net, "Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
-		      return 0;
-		      }
-		    }
-		    netdev_dbg(dev->net, "Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-			   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
+		if (unlikely(header_start[0] != 0x57 || header_start[1] != 0x44)) {
+			if (!memcmp(header_start, EXPECTED_UNKNOWN_HEADER_1, sizeof(EXPECTED_UNKNOWN_HEADER_1))
+				|| !memcmp(header_start, EXPECTED_UNKNOWN_HEADER_2, sizeof(EXPECTED_UNKNOWN_HEADER_2))) {
+				netdev_dbg(dev->net, "Received expected unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+					   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
+			} else {
+				netdev_err(dev->net, "Received unknown frame header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+					   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
+				return 0;
+			}
+		}
+		netdev_dbg(dev->net, "Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+				 header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
 
-		    usb_packet_length = skb->len - (2 * GT_B3730_HEADER_LENGTH); // subtract start header and end header
-		    ether_packet_lenght = header_start[2] + (header_start[3] << 8);
-		    skb_pull(skb, GT_B3730_HEADER_LENGTH);
+		usb_packet_length = skb->len - (2 * GT_B3730_HEADER_LENGTH); /* subtract start header and end header */
+		ether_packet_lenght = header_start[2] + (header_start[3] << 8);
+		skb_pull(skb, GT_B3730_HEADER_LENGTH);
 
-		    if (usb_packet_length < ether_packet_lenght) { // Some small packets misses end marker
+		if (usb_packet_length < ether_packet_lenght) { /* Some small packets misses end marker */
 			ether_packet_lenght = usb_packet_length + GT_B3730_HEADER_LENGTH;
 			is_last = true;
-		    }
-		    else {
-		        netdev_dbg(dev->net, "Correct package lenght #%i", i+1);
+		} else {
+			netdev_dbg(dev->net, "Correct package lenght #%i", i+1);
 
 			is_last = (memcmp(skb->data + ether_packet_lenght, HEADER_END_OF_USB_PACKET, sizeof(HEADER_END_OF_USB_PACKET)) == 0);
 			if (!is_last) {
-			  header_start = skb->data + ether_packet_lenght;
-			  netdev_dbg(dev->net, "End header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
-				     header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
+				header_start = skb->data + ether_packet_lenght;
+				netdev_dbg(dev->net, "End header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
+					   header_start[0], header_start[1], header_start[2], header_start[3], header_start[4], header_start[5], skb->len - GT_B3730_HEADER_LENGTH);
 			}
-		    }
+		}
 
-		    if (is_last) skb2 = skb;
-		    else {
-		        skb2 = skb_clone(skb, GFP_ATOMIC);
+		if (is_last) {
+			skb2 = skb;
+		} else {
+			skb2 = skb_clone(skb, GFP_ATOMIC);
 			if (unlikely(!skb2))
-  			    return 0;
-		    }
+				return 0;
+		}
 
-		    skb_trim(skb2, ether_packet_lenght);
+		skb_trim(skb2, ether_packet_lenght);
 
-		    if (is_last) return 1;
-		    else {
+		if (is_last) {
+			return 1;
+		} else {
 			usbnet_skb_return(dev, skb2);
 			skb_pull(skb, ether_packet_lenght);
-		    }
+		}
 
 		i++;
-		} while (skb->len);
+	} while (skb->len);
 
 	return 1;
 }
@@ -282,12 +281,12 @@ static const struct driver_info gt_b3730_info = {
 /*-------------------------------------------------------------------------*/
 
 static const struct usb_device_id products[] = {
-  /* Samsung LTE modem */
-  { USB_DEVICE(0x04e8, 0x689a) }, /* The unswitched USB ID, to get the module auto loaded. */
-  { USB_DEVICE(0x04e8, 0x6889),   /* The stick swithed into modem (by e.g. usb_modeswitch) */
-    .driver_info = (unsigned long) &gt_b3730_info,
-  },
-  { /* EMPTY == end of list */ }
+	/* Samsung LTE modem */
+	{ USB_DEVICE(0x04e8, 0x689a) }, /* The unswitched USB ID, to get the module auto loaded. */
+	{ USB_DEVICE(0x04e8, 0x6889),	 /* The stick swithed into modem (by e.g. usb_modeswitch) */
+		.driver_info = (unsigned long) &gt_b3730_info,
+	},
+	{ /* EMPTY == end of list */ }
 };
 MODULE_DEVICE_TABLE(usb, products);
 
@@ -299,7 +298,6 @@ static struct usb_driver gt_b3730_driver = {
 	.suspend =	usbnet_suspend,
 	.resume =	usbnet_resume,
 };
-
 
 static int __init gt_b3730_init(void)
 {
