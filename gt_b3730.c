@@ -108,14 +108,27 @@ static int gt_b3730_init_and_get_ethernet_addr(struct usbnet *dev,
 	return status;
 }
 
+static int gt_b3730_do_modeswitch(struct usb_device *udev, struct usb_interface *uintf)
+{
+  static unsigned char switch_msg[] = {0x55,0x53,0x42,0x43,0x78,0x56,0x34,0x12,0x01,0x00,0x00,0x00,0x80,0x00,0x06,0x01,
+				       0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+  //55 53 42 43 78 56 34 12 01 00 00 00 80 00 06 01 000000000000000000000000000000"
+  int act_len;
+  int status;
+
+  printk(KERN_INFO"Switching to modem mode");
+  //  netdev_info(dev->net, "Switching to modem mode");
+  status = usb_bulk_msg(udev, usb_sndbulkpipe(udev, 0x06), switch_msg, sizeof(switch_msg), &act_len, GT_B3730_USB_TIMEOUT);
+  if (status || act_len != sizeof(switch_msg)) {
+    printk(KERN_ERR"Error switching mode: %i", status);
+  }
+  return status;
+}
+
 static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 {
 	u8 status;
 	u8 ethernet_addr[ETH_ALEN];
-
-	/* Don't bind to AT command interface */
-	if (intf->cur_altsetting->desc.bInterfaceClass != USB_CLASS_VENDOR_SPEC)
-		return -EINVAL;
 
 	dev->in = usb_rcvbulkpipe (dev->udev, 0x81 & USB_ENDPOINT_NUMBER_MASK);
 	dev->out = usb_sndbulkpipe (dev->udev, 0x02 & USB_ENDPOINT_NUMBER_MASK);
@@ -313,10 +326,31 @@ static const struct usb_device_id products[] = {
 };
 MODULE_DEVICE_TABLE(usb, products);
 
+
+static int gt_b3730_probe (struct usb_interface *udev, const struct usb_device_id *prod)
+{
+  struct usb_device *xdev;
+
+  printk(KERN_INFO"HEI");
+
+  xdev = interface_to_usbdev(udev);
+
+  if (udev->cur_altsetting->desc.bInterfaceClass == USB_CLASS_MASS_STORAGE && 1) {
+    gt_b3730_do_modeswitch(xdev, udev);
+    return -ENODEV;
+  }
+  else if (udev->cur_altsetting->desc.bInterfaceClass != USB_CLASS_VENDOR_SPEC) {
+    /* Don't bind to AT command interface. Let option module do it. */
+    return -ENODEV;
+  }
+  else return usbnet_probe(udev, prod);
+}
+
+
 static struct usb_driver gt_b3730_driver = {
 	.name =		"gt_b3730",
 	.id_table =	products,
-	.probe =	usbnet_probe,
+	.probe =	gt_b3730_probe,
 	.disconnect =	usbnet_disconnect,
 	.suspend =	usbnet_suspend,
 	.resume =	usbnet_resume,
