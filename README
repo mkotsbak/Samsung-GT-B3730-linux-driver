@@ -35,7 +35,7 @@ How to connect
 * sudo modprobe usbnet
 * sudo insmod ./gt_b3730.ko
 * sh chat.sh
-* Monitor connection using: "minicom -D /dev/ttyUSB0" (NB! this seems to be required, else the modem stops)
+* Monitor connection using: "minicom -o -D /dev/ttyUSB0" (NB! this seems to be required, else the modem stops)
 * sudo ifup wwan0
 
 **************
