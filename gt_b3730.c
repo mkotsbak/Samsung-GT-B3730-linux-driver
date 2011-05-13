@@ -123,7 +123,7 @@ static int gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 
 	dev->net->hard_header_len += GT_B3730_HEADER_LENGTH;
 	dev->hard_mtu = 1400;
-	dev->rx_urb_size = dev->hard_mtu * 20;
+	dev->rx_urb_size = dev->hard_mtu * 10; // Found as optimal after testing
 
 	status = gt_b3730_init_and_get_ethernet_addr(dev, ethernet_addr);
 
