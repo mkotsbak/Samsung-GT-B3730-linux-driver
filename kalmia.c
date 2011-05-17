@@ -1,9 +1,10 @@
 /*
- * USB network interface driver for Samsung GT-B3730 LTE USB modem
+ * USB network interface driver for Samsung Kalmia based LTE USB modem like the
+ * Samsung GT-B3730 and GT-B3710.
  *
  * Copyright (C) 2011 Marius Bjoernstad Kotsbak
  *
- * Based on the cdc_eem module
+ * Based on the cdc_eem module.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,14 +41,14 @@
 /* #define	DEBUG */
 /* #define	VERBOSE */
 
-#define GT_B3730_HEADER_LENGTH 6
-#define GT_B3730_ALIGN_SIZE 4
-#define GT_B3730_USB_TIMEOUT 10000
+#define KALMIA_HEADER_LENGTH 6
+#define KALMIA_ALIGN_SIZE 4
+#define KALMIA_USB_TIMEOUT 10000
 
 /*-------------------------------------------------------------------------*/
 
 static int
-gt_b3730_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len,
+kalmia_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len,
 	u8 *buffer, u8 expected_len)
 {
 	int act_len;
@@ -56,7 +57,7 @@ gt_b3730_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len,
 	netdev_dbg(dev->net, "Sending init packet");
 
 	status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 0x02),
-		init_msg, init_msg_len, &act_len, GT_B3730_USB_TIMEOUT);
+		init_msg, init_msg_len, &act_len, KALMIA_USB_TIMEOUT);
 	if (status != 0) {
 		netdev_err(dev->net,
 			"Error sending init packet. Status %i, length %i\n",
@@ -73,7 +74,7 @@ gt_b3730_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len,
 	}
 
 	status = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x81),
-		buffer, expected_len, &act_len, GT_B3730_USB_TIMEOUT);
+		buffer, expected_len, &act_len, KALMIA_USB_TIMEOUT);
 
 	if (status != 0)
 		netdev_err(dev->net,
@@ -87,7 +88,7 @@ gt_b3730_send_init_packet(struct usbnet *dev, u8 *init_msg, u8 init_msg_len,
 }
 
 static int
-gt_b3730_init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
+kalmia_init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
 {
 	char init_msg_1[] =
 		{ 0x57, 0x50, 0x04, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00,
@@ -98,12 +99,12 @@ gt_b3730_init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
 	char receive_buf[28];
 	int status;
 
-	status = gt_b3730_send_init_packet(dev, init_msg_1, sizeof(init_msg_1)
+	status = kalmia_send_init_packet(dev, init_msg_1, sizeof(init_msg_1)
 		/ sizeof(init_msg_1[0]), receive_buf, 24);
 	if (status != 0)
 		return status;
 
-	status = gt_b3730_send_init_packet(dev, init_msg_2, sizeof(init_msg_2)
+	status = kalmia_send_init_packet(dev, init_msg_2, sizeof(init_msg_2)
 		/ sizeof(init_msg_2[0]), receive_buf, 28);
 	if (status != 0)
 		return status;
@@ -114,7 +115,7 @@ gt_b3730_init_and_get_ethernet_addr(struct usbnet *dev, u8 *ethernet_addr)
 }
 
 static int
-gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
+kalmia_bind(struct usbnet *dev, struct usb_interface *intf)
 {
 	u8 status;
 	u8 ethernet_addr[ETH_ALEN];
@@ -127,11 +128,11 @@ gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 	dev->out = usb_sndbulkpipe(dev->udev, 0x02 & USB_ENDPOINT_NUMBER_MASK);
 	dev->status = NULL;
 
-	dev->net->hard_header_len += GT_B3730_HEADER_LENGTH;
+	dev->net->hard_header_len += KALMIA_HEADER_LENGTH;
 	dev->hard_mtu = 1400;
 	dev->rx_urb_size = dev->hard_mtu * 10; // Found as optimal after testing
 
-	status = gt_b3730_init_and_get_ethernet_addr(dev, ethernet_addr);
+	status = kalmia_init_and_get_ethernet_addr(dev, ethernet_addr);
 
 	if (status < 0) {
 		usb_set_intfdata(intf, NULL);
@@ -146,7 +147,7 @@ gt_b3730_bind(struct usbnet *dev, struct usb_interface *intf)
 }
 
 static struct sk_buff *
-gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
+kalmia_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 {
 	struct sk_buff *skb2 = NULL;
 	u16 content_len;
@@ -158,30 +159,30 @@ gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 		int headroom = skb_headroom(skb);
 		int tailroom = skb_tailroom(skb);
 
-		if ((tailroom >= GT_B3730_ALIGN_SIZE) && (headroom
-			>= GT_B3730_HEADER_LENGTH))
+		if ((tailroom >= KALMIA_ALIGN_SIZE) && (headroom
+			>= KALMIA_HEADER_LENGTH))
 			goto done;
 
-		if ((headroom + tailroom) > (GT_B3730_HEADER_LENGTH
-			+ GT_B3730_ALIGN_SIZE)) {
-			skb->data = memmove(skb->head + GT_B3730_HEADER_LENGTH,
+		if ((headroom + tailroom) > (KALMIA_HEADER_LENGTH
+			+ KALMIA_ALIGN_SIZE)) {
+			skb->data = memmove(skb->head + KALMIA_HEADER_LENGTH,
 				skb->data, skb->len);
 			skb_set_tail_pointer(skb, skb->len);
 			goto done;
 		}
 	}
 
-	skb2 = skb_copy_expand(skb, GT_B3730_HEADER_LENGTH,
-		GT_B3730_ALIGN_SIZE, flags);
+	skb2 = skb_copy_expand(skb, KALMIA_HEADER_LENGTH,
+		KALMIA_ALIGN_SIZE, flags);
 	if (!skb2)
 		return NULL;
 
 	dev_kfree_skb_any(skb);
 	skb = skb2;
 
-	done: header_start = skb_push(skb, GT_B3730_HEADER_LENGTH);
-	ether_type_1 = header_start[GT_B3730_HEADER_LENGTH + 12];
-	ether_type_2 = header_start[GT_B3730_HEADER_LENGTH + 13];
+	done: header_start = skb_push(skb, KALMIA_HEADER_LENGTH);
+	ether_type_1 = header_start[KALMIA_HEADER_LENGTH + 12];
+	ether_type_2 = header_start[KALMIA_HEADER_LENGTH + 13];
 
 	netdev_dbg(dev->net, "Sending etherType: %02x%02x", ether_type_1,
 		ether_type_2);
@@ -189,7 +190,7 @@ gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 	/* According to empiric data for data packages */
 	header_start[0] = 0x57;
 	header_start[1] = 0x44;
-	content_len = skb->len - GT_B3730_HEADER_LENGTH;
+	content_len = skb->len - KALMIA_HEADER_LENGTH;
 	header_start[2] = (content_len & 0xff); /* low byte */
 	header_start[3] = (content_len >> 8); /* high byte */
 
@@ -197,9 +198,9 @@ gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 	header_start[5] = ether_type_2;
 
 	/* Align to 4 bytes by padding with zeros */
-	reminder = skb->len % GT_B3730_ALIGN_SIZE;
+	reminder = skb->len % KALMIA_ALIGN_SIZE;
 	if (reminder > 0) {
-		padlen = GT_B3730_ALIGN_SIZE - reminder;
+		padlen = KALMIA_ALIGN_SIZE - reminder;
 		memset(skb_put(skb, padlen), 0, padlen);
 	}
 
@@ -214,7 +215,7 @@ gt_b3730_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 }
 
 static int
-gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
+kalmia_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 {
 	/*
 	 * Our task here is to strip off framing, leaving skb with one
@@ -229,7 +230,7 @@ gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	u8 i = 0;
 
 	/* incomplete header? */
-	if (skb->len < GT_B3730_HEADER_LENGTH)
+	if (skb->len < KALMIA_HEADER_LENGTH)
 		return 0;
 
 	do {
@@ -251,7 +252,7 @@ gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 					header_start[0], header_start[1],
 					header_start[2], header_start[3],
 					header_start[4], header_start[5],
-					skb->len - GT_B3730_HEADER_LENGTH);
+					skb->len - KALMIA_HEADER_LENGTH);
 			}
 			else {
 				netdev_err(
@@ -260,7 +261,7 @@ gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 					header_start[0], header_start[1],
 					header_start[2], header_start[3],
 					header_start[4], header_start[5],
-					skb->len - GT_B3730_HEADER_LENGTH);
+					skb->len - KALMIA_HEADER_LENGTH);
 				return 0;
 			}
 		}
@@ -269,17 +270,17 @@ gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 			"Received header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
 			header_start[0], header_start[1], header_start[2],
 			header_start[3], header_start[4], header_start[5],
-			skb->len - GT_B3730_HEADER_LENGTH);
+			skb->len - KALMIA_HEADER_LENGTH);
 
 		/* subtract start header and end header */
-		usb_packet_length = skb->len - (2 * GT_B3730_HEADER_LENGTH);
+		usb_packet_length = skb->len - (2 * KALMIA_HEADER_LENGTH);
 		ether_packet_lenght = header_start[2] + (header_start[3] << 8);
-		skb_pull(skb, GT_B3730_HEADER_LENGTH);
+		skb_pull(skb, KALMIA_HEADER_LENGTH);
 
 		/* Some small packets misses end marker */
 		if (usb_packet_length < ether_packet_lenght) {
 			ether_packet_lenght = usb_packet_length
-				+ GT_B3730_HEADER_LENGTH;
+				+ KALMIA_HEADER_LENGTH;
 			is_last = true;
 		}
 		else {
@@ -297,7 +298,7 @@ gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 					header_start[0], header_start[1],
 					header_start[2], header_start[3],
 					header_start[4], header_start[5],
-					skb->len - GT_B3730_HEADER_LENGTH);
+					skb->len - KALMIA_HEADER_LENGTH);
 			}
 		}
 
@@ -327,12 +328,12 @@ gt_b3730_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	return 1;
 }
 
-static const struct driver_info gt_b3730_info = {
-	.description = "Samsung GT-B3730 LTE USB dongle",
+static const struct driver_info kalmia_info = {
+	.description = "Samsung KALMIA LTE USB dongle",
 	.flags = FLAG_WWAN,
-	.bind = gt_b3730_bind,
-	.rx_fixup = gt_b3730_rx_fixup,
-	.tx_fixup = gt_b3730_tx_fixup
+	.bind = kalmia_bind,
+	.rx_fixup = kalmia_rx_fixup,
+	.tx_fixup = kalmia_tx_fixup
 };
 
 /*-------------------------------------------------------------------------*/
@@ -342,12 +343,12 @@ static const struct usb_device_id products[] = {
 	{ USB_DEVICE(0x04e8, 0x689a) },
 	/* The stick swithed into modem (by e.g. usb_modeswitch): */
 	{ USB_DEVICE(0x04e8, 0x6889),
-		.driver_info = (unsigned long) &gt_b3730_info, },
+		.driver_info = (unsigned long) &kalmia_info, },
 	{ /* EMPTY == end of list */} };
 MODULE_DEVICE_TABLE( usb, products);
 
-static struct usb_driver gt_b3730_driver = {
-	.name = "gt_b3730",
+static struct usb_driver kalmia_driver = {
+	.name = "kalmia",
 	.id_table = products,
 	.probe = usbnet_probe,
 	.disconnect = usbnet_disconnect,
@@ -355,18 +356,18 @@ static struct usb_driver gt_b3730_driver = {
 	.resume = usbnet_resume
 };
 
-static int __init gt_b3730_init(void)
+static int __init kalmia_init(void)
 {
-	return usb_register(&gt_b3730_driver);
+	return usb_register(&kalmia_driver);
 }
-module_init( gt_b3730_init);
+module_init( kalmia_init);
 
-static void __exit gt_b3730_exit(void)
+static void __exit kalmia_exit(void)
 {
-	usb_deregister(&gt_b3730_driver);
+	usb_deregister(&kalmia_driver);
 }
-module_exit( gt_b3730_exit);
+module_exit( kalmia_exit);
 
 MODULE_AUTHOR("Marius Bjoernstad Kotsbak <marius@kotsbak.com>");
-MODULE_DESCRIPTION("Samsung GT-B3730");
+MODULE_DESCRIPTION("Samsung KALMIA");
 MODULE_LICENSE("GPL");
