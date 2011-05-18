@@ -369,5 +369,5 @@ static void __exit kalmia_exit(void)
 module_exit( kalmia_exit);
 
 MODULE_AUTHOR("Marius Bjoernstad Kotsbak <marius@kotsbak.com>");
-MODULE_DESCRIPTION("Samsung KALMIA");
+MODULE_DESCRIPTION("Samsung Kalmia USB network driver");
 MODULE_LICENSE("GPL");
