@@ -153,7 +153,7 @@ kalmia_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 	u16 content_len;
 	unsigned char *header_start;
 	unsigned char ether_type_1, ether_type_2;
-	u8 reminder, padlen = 0;
+	u8 remainder, padlen = 0;
 
 	if (!skb_cloned(skb)) {
 		int headroom = skb_headroom(skb);
@@ -198,9 +198,9 @@ kalmia_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 	header_start[5] = ether_type_2;
 
 	/* Align to 4 bytes by padding with zeros */
-	reminder = skb->len % KALMIA_ALIGN_SIZE;
-	if (reminder > 0) {
-		padlen = KALMIA_ALIGN_SIZE - reminder;
+	remainder = skb->len % KALMIA_ALIGN_SIZE;
+	if (remainder > 0) {
+		padlen = KALMIA_ALIGN_SIZE - remainder;
 		memset(skb_put(skb, padlen), 0, padlen);
 	}
 
