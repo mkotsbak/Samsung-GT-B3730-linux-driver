@@ -153,7 +153,7 @@ kalmia_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
 	u16 content_len;
 	unsigned char *header_start;
 	unsigned char ether_type_1, ether_type_2;
-	u8 reminder, padlen;
+	u8 reminder, padlen = 0;
 
 	if (!skb_cloned(skb)) {
 		int headroom = skb_headroom(skb);
