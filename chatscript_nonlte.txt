@@ -1,0 +1,20 @@
+ABORT 'TIME OUT' ABORT 'ERROR'
+
+# modem *seems* to have less difficulties resetting itself when enabling echo at first
+''	ATE1
+''	AT
+'OK'   AT+CGREG=2
+## 'AT+CPIN?'
+'OK'	'AT+CFUN=5' 
+'OK'	'AT+MODESELECT=3' 
+# switches to non-LTE (<= 3G+)
+'OK'	'AT+CHANGEALLPATH=1'
+## '' 'AT+COPSNAME'
+'OK' 'AT+CGACT?'
+'CGACT:1,0' 'AT+CGDCONT=1,"IP","internet.netcom.no"'
+'OK' 'AT+CGACT?'
+'OK' 'AT+CGATT=1'
+'OK' 'AT+CGACT=1,1'
+'CGACT:1,1'
+
+# AT+CGATT?
