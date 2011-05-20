@@ -33,7 +33,7 @@ How to connect
 * sudo insmod ./option/option.ko
 * Connect modem
 * sudo modprobe usbnet
-* sudo insmod ./gt_b3730.ko
+* sudo insmod ./kalmia.ko
 * sh chat.sh
 * Monitor connection using: "minicom -o -D /dev/ttyUSB0" (NB! this seems to be required, else the modem stops)
 * sudo ifup wwan0
@@ -44,6 +44,6 @@ How to reconnect
 
 * sudo ifdown wwan0
 * Unplug and plug modem (bug in firmware, "ATE1" does not work. Same with windows driver).
-* If /var/log/messages indicate error in driver, rmmod gt_b3730, then insmod again.
+* If /var/log/messages indicate error in driver, rmmod kalmia, then insmod again.
 * sh chat.sh
 * sudo ifup wwan0
