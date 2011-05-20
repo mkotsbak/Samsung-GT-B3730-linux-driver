@@ -236,7 +236,7 @@ kalmia_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	do {
 		struct sk_buff *skb2 = NULL;
 		u8 *header_start;
-		u16 usb_packet_length, ether_packet_lenght;
+		u16 usb_packet_length, ether_packet_length;
 		int is_last;
 
 		header_start = skb->data;
@@ -274,24 +274,24 @@ kalmia_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 
 		/* subtract start header and end header */
 		usb_packet_length = skb->len - (2 * KALMIA_HEADER_LENGTH);
-		ether_packet_lenght = header_start[2] + (header_start[3] << 8);
+		ether_packet_length = header_start[2] + (header_start[3] << 8);
 		skb_pull(skb, KALMIA_HEADER_LENGTH);
 
 		/* Some small packets misses end marker */
-		if (usb_packet_length < ether_packet_lenght) {
-			ether_packet_lenght = usb_packet_length
+		if (usb_packet_length < ether_packet_length) {
+			ether_packet_length = usb_packet_length
 				+ KALMIA_HEADER_LENGTH;
 			is_last = true;
 		}
 		else {
-			netdev_dbg(dev->net, "Correct package lenght #%i", i
+			netdev_dbg(dev->net, "Correct package length #%i", i
 				+ 1);
 
-			is_last = (memcmp(skb->data + ether_packet_lenght,
+			is_last = (memcmp(skb->data + ether_packet_length,
 				HEADER_END_OF_USB_PACKET,
 				sizeof(HEADER_END_OF_USB_PACKET)) == 0);
 			if (!is_last) {
-				header_start = skb->data + ether_packet_lenght;
+				header_start = skb->data + ether_packet_length;
 				netdev_dbg(
 					dev->net,
 					"End header: %02x:%02x:%02x:%02x:%02x:%02x. Package length: %i\n",
@@ -311,14 +311,14 @@ kalmia_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 				return 0;
 		}
 
-		skb_trim(skb2, ether_packet_lenght);
+		skb_trim(skb2, ether_packet_length);
 
 		if (is_last) {
 			return 1;
 		}
 		else {
 			usbnet_skb_return(dev, skb2);
-			skb_pull(skb, ether_packet_lenght);
+			skb_pull(skb, ether_packet_length);
 		}
 
 		i++;
