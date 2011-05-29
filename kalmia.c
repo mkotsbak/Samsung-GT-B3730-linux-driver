@@ -329,7 +329,7 @@ kalmia_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 }
 
 static const struct driver_info kalmia_info = {
-	.description = "Samsung KALMIA LTE USB dongle",
+	.description = "Samsung Kalmia LTE USB dongle",
 	.flags = FLAG_WWAN,
 	.bind = kalmia_bind,
 	.rx_fixup = kalmia_rx_fixup,
