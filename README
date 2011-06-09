@@ -5,6 +5,11 @@ How to build
 
 Get the kalmia.c from https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver/drivers/net/usb/kalmia.c
 
+Submitted patches for option.c are available as option_1.patch and option_2.patch in "option" subdir.
+A full version of it for the current kernel:
+
+https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver/drivers/usb/serial/option.c
+
 In root dir:
 
 * sh build.sh
