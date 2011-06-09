@@ -3,6 +3,8 @@
 How to build
 ************
 
+Get the kalmia.c from https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver/drivers/net/usb/kalmia.c
+
 In root dir:
 
 * sh build.sh
