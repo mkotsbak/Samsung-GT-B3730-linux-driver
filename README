@@ -17,9 +17,9 @@ Kernel 2.6.38 (Ubuntu Natty):
 Get kalmia.c from:
 https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver-2.6.38/drivers/net/usb/kalmia.c
 
-Get option.c from (latest stable 2.6.38.x): http://git.kernel.org/?p=linux/kernel/git/stable/linux-2.6.38.y.git;a=blob;f=drivers/usb/serial/option.c;h=318dd00040a3fdb28fbce657d7a3880d12ba505d;hb=HEAD
+Get option.c from (latest stable 2.6.38.x): http://git.kernel.org/?p=linux/kernel/git/stable/linux-2.6.38.y.git;a=blob_plain;f=drivers/usb/serial/option.c;hb=HEAD
 
-https://github.com/mkotsbak/linux-2.6/tree/Samsung_kalmia_driver-2.6.38
+Or the whole kernel from https://github.com/mkotsbak/linux-2.6/tree/Samsung_kalmia_driver-2.6.38
 
 Kernel 2.6.35 (Ubuntu Maverick):
 -------------------------------
