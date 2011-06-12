@@ -76,6 +76,10 @@ How to connect
 * sudo modprobe option && sudo rmmod option (to get module deps)
 * sudo insmod ./option/option.ko
 * Connect modem
+* Run connect_lte.sh
+
+or:
+
 * sudo modprobe usbnet
 * sudo insmod ./kalmia.ko
 * sh chat.sh
