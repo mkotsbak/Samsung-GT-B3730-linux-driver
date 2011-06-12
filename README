@@ -1,14 +1,42 @@
 
+**********************
+How to get the sources
+**********************
+
+Kernel 3.0+:
+Get kalmia.c from:
+https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver-3.0/drivers/net/usb/kalmia.c
+
+Option.c is already patched in that version.
+
+Kernel 2.6.38:
+-------------
+Get kalmia.c from:
+https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver-2.6.38/drivers/net/usb/kalmia.c
+
+Get option.c from (latest stable 2.6.38.x): http://git.kernel.org/?p=linux/kernel/git/stable/linux-2.6.38.y.git;a=blob;f=drivers/usb/serial/option.c;h=318dd00040a3fdb28fbce657d7a3880d12ba505d;hb=HEAD
+
+Kernel 2.6.35:
+-------------
+Get kalmia.c from:
+https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver-2.6.35/drivers/net/usb/kalmia.c
+
+Get option.c from 
+https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver-2.6.35/drivers/usb/serial/option.c
+
+Kernel 2.6.32:
+-------------
+Get kalmia.c from:
+https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver/drivers/net/usb/kalmia.c
+
+Get option.c from 
+https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver/drivers/usb/serial/option.c
+
+Submitted patches for option.c are available as option_1.patch and option_2.patch in "option" subdir.
+
 ************
 How to build
 ************
-
-Get the kalmia.c from https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver/drivers/net/usb/kalmia.c
-
-Submitted patches for option.c are available as option_1.patch and option_2.patch in "option" subdir.
-A full version of it for the current kernel:
-
-https://github.com/mkotsbak/linux-2.6/blob/Samsung_kalmia_driver/drivers/usb/serial/option.c
 
 In root dir:
 
